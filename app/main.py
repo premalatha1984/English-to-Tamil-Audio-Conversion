@@ -85,4 +85,5 @@ async def upload_file(file: UploadFile = File(...)):
     with open(os.path.join(upload_folder, file.filename), "wb") as buffer:
         buffer.write(await file.read())
     transcription = await translate_audio(file.filename)
-    return {"filename": file.filename, "transcription": transcription}
+    return {"filename": file.filename, "trans
+            cription": transcription}
