@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech Recognition and Translation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            background-image: url('https://img.freepik.com/free-vector/users-translating-speech-with-smartwatch-digital-translator-portable-translator-electronic-language-translator-concept-pinkish-coral-bluevector-isolated-illustration_335657-2510.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            height: 100vh;
+        }
+
+        .overlay {
+            background-color: rgba(0, 0, 0, 0.5);
+            height: 100%;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 800px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #fff;
+            margin-bottom: 20px;
+        }
+
+        #chat-box {
+            width: 100%;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            background-color: #fff;
+            margin-bottom: 20px;
+        }
+
+        .message {
+            margin: 5px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .user-message {
+            background-color: #007bff;
+            color: #fff;
+            align-self: flex-start;
+        }
+
+        .bot-message {
+            background-color: #eee;
+            color: #333;
+            align-self: flex-end;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            display: block;
+            margin: 0 auto;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        @media only screen and (max-width: 600px) {
+            .container {
+                padding: 10px;
+            }
+        }
+
+        .floating-icon {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background-color: rgba(0, 0, 0, 0.5);
+            background-image: url('https://www.itcglobaltranslations.com/wp-content/uploads/sites/5/2020/08/quality-translator.jpg');
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            border: solid 3px #0056b3;
+        }
+
+        .floating-icon img {
+            width: 80%;
+            height: 80%;
+            object-fit: contain;
+        }
+
+        .floating-icon:hover {
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+
+        @media (max-width: 768px) {
+            .floating-icon {
+                width: 40px;
+                height: 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="overlay">
+        <div class="container">
+            <h1>Speech Recognition and Translation</h1>
+            <div id="chat-box"></div>
+            <button id="start-btn">Start Recording</button>
+        </div>
+    </div>
+
+    <div class="floating-icon">
+        <a href="/speech-converter">
+            
+        <img src="https://www.itcglobaltranslations.com/wp-content/uploads/sites/5/2020/08/quality-translator.jpg" alt="Icon">
+         </a>
+    </div>
+
+    <script>
+        const startBtn = document.getElementById('start-btn');
+        const chatBox = document.getElementById('chat-box');
+
+        startBtn.addEventListener('click', () => {
+            startBtn.disabled = true;
+            appendMessage('Listening...', 'user-message');
+            
+            const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition || window.mozSpeechRecognition || window.msSpeechRecognition)();
+            recognition.lang = 'en-US';
+            recognition.start();
+
+            recognition.onresult = (event) => {
+                const speechText = event.results[0][0].transcript;
+                appendMessage(`You said: ${speechText}`, 'user-message');
+
+                fetch('/process_speech', {
+                    method: 'POST',
+                    body: JSON.stringify({ speech_text: speechText }),
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.translated_chunks) {
+                        // Append each translated chunk to the chat box
+                        data.translated_chunks.forEach(chunk => {
+                            appendMessage(`Translated text: ${chunk}`, 'bot-message');
+                        });
+
+                        // Convert the last chunk to speech
+                        const lastChunk = data.translated_chunks[data.translated_chunks.length - 1];
+                        if (lastChunk.trim() !== '') {
+                            const utterance = new SpeechSynthesisUtterance(lastChunk);
+                            speechSynthesis.speak(utterance);
+                        } else {
+                            appendMessage('Translated text is empty. Unable to generate speech.', 'bot-message');
+                        }
+                    } else {
+                        appendMessage('Translated text is empty. Unable to generate speech.', 'bot-message');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    appendMessage('Error processing speech.', 'bot-message');
+                });
+            };
+
+            recognition.onend = () => {
+                startBtn.disabled = false;
+            };
+
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                appendMessage('Speech recognition error. Please try again.', 'bot-message');
+            };
+        });
+
+        function appendMessage(message, className) {
+            const messageElement = document.createElement('div');
+            messageElement.className = `message ${className}`;
+            messageElement.textContent = message;
+            chatBox.appendChild(messageElement);
+            chatBox.scrollTop = chatBox.scrollHeight; // Auto scroll to bottom
+        }
+    </script>
+</body>
+</html>

@@ -20,18 +20,19 @@ app.mount("/templates", StaticFiles(directory="templates"), name="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 @app.get("/")
 async def read_index():
-    # Path to your HTML file
-    html_file_path = os.path.join("templates", "index.html")
-    with open(html_file_path, "r") as file:
-        html_content = file.read()
-    return HTMLResponse(content=html_content)
-@app.get('/speech-converter')
-async def speech_converter(request: Request):
     try:
         # Serve the speechconverter.html file from the templates directory
         return FileResponse("templates/speechconverter.html", media_type="text/html")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    # Path to your HTML file
+    
+@app.get('/speech-converter')
+async def speech_converter(request: Request):
+    html_file_path = os.path.join("templates", "index.html")
+    with open(html_file_path, "r") as file:
+        html_content = file.read()
+    return HTMLResponse(content=html_content)
 
 def text_to_speech(text, output_file):
     # Initialize the text-to-speech engine

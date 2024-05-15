@@ -68,6 +68,40 @@
                 background-size: contain;
             }
         }
+
+        .floating-icon {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background-color: rgba(0, 0, 0, 0.5);
+            background-image: url('https://img.freepik.com/free-vector/users-translating-speech-with-smartwatch-digital-translator-portable-translator-electronic-language-translator-concept-pinkish-coral-bluevector-isolated-illustration_335657-2510.jpg');
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            border: solid 3px #0056b3;
+        }
+
+        .floating-icon img {
+            width: 80%;
+            height: 80%;
+            object-fit: contain;
+        }
+
+        .floating-icon:hover {
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+
+        @media (max-width: 768px) {
+            .floating-icon {
+                width: 40px;
+                height: 40px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -78,6 +112,12 @@
             <button type="submit">Upload</button>
         </form>
         <div id="response"></div>
+    </div>
+
+    <div class="floating-icon">
+        <a href="/">
+        <img src="https://img.freepik.com/free-vector/users-translating-speech-with-smartwatch-digital-translator-portable-translator-electronic-language-translator-concept-pinkish-coral-bluevector-isolated-illustration_335657-2510.jpg" alt="Icon">
+        </a>
     </div>
 
     <script src="/static/app.js"></script>
