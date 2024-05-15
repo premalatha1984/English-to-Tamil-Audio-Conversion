@@ -108,10 +108,16 @@
     <div id="uploadForm">
         <h1>File Upload</h1>
         <form id="form" enctype="multipart/form-data">
-            <input type="file" name="file" id="fileInput">
+            <input type="file" name="file" id="fileInput" accept="audio/wav">
             <button type="submit">Upload</button>
         </form>
         <div id="response"></div>
+
+        <h2>Player</h2>
+        <audio controls>
+            <source src="/static/translated_audio.mp3" type="audio/mpeg">
+            Your browser does not support the audio element.
+        </audio>
     </div>
 
     <div class="floating-icon">
