@@ -71,9 +71,9 @@ async def translate_audio(filename):
             # tamil_text = translate_to_tamil(text)
             # print("English: ", text)
             # print("Tamil: ", tamil_text)
-
+            translated_audio_file = os.path.join("static", "translated_audio.mp3")
             # Generate translated audio
-            translated_audio_file = "/static/translated_audio.mp3"
+            # translated_audio_file = "/static/translated_audio.mp3"
             translator = Translator()
            
             translated_text = translator.translate(text, src="en", dest="ta").text
