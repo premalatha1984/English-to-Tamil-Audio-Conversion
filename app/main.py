@@ -7,6 +7,13 @@ from googletrans import Translator
 import pyttsx3
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
+
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse
+from starlette.requests import Request
+from pydantic import BaseModel
+
 app = FastAPI()
 
 app.mount("/templates", StaticFiles(directory="templates"), name="templates")
@@ -18,7 +25,13 @@ async def read_index():
     with open(html_file_path, "r") as file:
         html_content = file.read()
     return HTMLResponse(content=html_content)
-
+@app.get('/speech-converter')
+async def speech_converter(request: Request):
+    try:
+        # Serve the speechconverter.html file from the templates directory
+        return FileResponse("templates/speechconverter.html", media_type="text/html")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 def text_to_speech(text, output_file):
     # Initialize the text-to-speech engine
@@ -85,5 +98,39 @@ async def upload_file(file: UploadFile = File(...)):
     with open(os.path.join(upload_folder, file.filename), "wb") as buffer:
         buffer.write(await file.read())
     transcription = await translate_audio(file.filename)
-    return {"filename": file.filename, "trans
-            cription": transcription}
+    return {"filename": file.filename, "transcription": transcription}
+
+class SpeechInput(BaseModel):
+    speech_text: str
+r = sr.Recognizer()
+translator_new = Translator()
+def translate_long_text(text):
+    print("text",text)
+    
+    print("Length of text:", len(text))
+    # Split the text into smaller chunks (e.g., 100 characters per chunk)
+    chunk_size = 3000
+    chunks = [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)]
+    print("chunks",chunks)
+    translated_chunks = []
+    for chunk in chunks:
+        translated_chunk = translator_new.translate(chunk, dest='ta').text
+        translated_chunks.append(translated_chunk)
+    
+    return translated_chunks
+@app.post('/process_speech')
+async def process_speech(data: SpeechInput):
+    try:
+        speech_text = data.speech_text
+        print("speech_text",speech_text)
+        # Translate long text
+        translated_chunks = translate_long_text(speech_text)
+        print("translated_chunks",translated_chunks)
+        if translated_chunks:
+            # Return the translated chunks as JSON
+            return {'translated_chunks': translated_chunks}
+        else:
+            return {'translated_chunks': ['']}  # Return an empty chunk as a fallback
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
