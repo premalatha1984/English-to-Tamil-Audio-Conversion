@@ -5,18 +5,19 @@ from gtts import gTTS
 import speech_recognition as sr
 from googletrans import Translator
 import pyttsx3
-
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse
 app = FastAPI()
 
-
-@app.post("/upload")
-async def upload_file(file: UploadFile = File(...)):
-    upload_folder = "uploaded_files"
-    if not os.path.exists(upload_folder):
-        os.makedirs(upload_folder)
-    with open(os.path.join(upload_folder, file.filename), "wb") as buffer:
-        buffer.write(await file.read())
-    return {"filename": file.filename}
+app.mount("/templates", StaticFiles(directory="templates"), name="templates")
+app.mount("/static", StaticFiles(directory="static"), name="static")
+@app.get("/")
+async def read_index():
+    # Path to your HTML file
+    html_file_path = os.path.join("templates", "index.html")
+    with open(html_file_path, "r") as file:
+        html_content = file.read()
+    return HTMLResponse(content=html_content)
 
 
 def text_to_speech(text, output_file):
@@ -39,14 +40,14 @@ def text_to_speech(text, output_file):
 #     return translated_text
 
 
-@app.post("/translate")
-async def translate_audio(file: UploadFile = File(...)):
+# @app.post("/translate")
+async def translate_audio(filename):
     try:
         # Define the recognizer
         recognizer = sr.Recognizer()
 
         # Use the recognizer to open the audio file
-        with sr.AudioFile(file.file) as source:
+        with sr.AudioFile("uploaded_files/"+filename) as source:
             # Listen for the data (load audio to memory)
             audio_data = recognizer.record(source)
 
@@ -60,8 +61,9 @@ async def translate_audio(file: UploadFile = File(...)):
             # Generate translated audio
             translated_audio_file = "translated_audio.mp3"
             translator = Translator()
-            print(translated_text=translator.translate(text, src="en", dest="ta").text)
+           
             translated_text = translator.translate(text, src="en", dest="ta").text
+            print(f"Translated text: {translated_text}")
             tts = gTTS(text=translated_text, lang="ta")
             tts.save(translated_audio_file)
             print(f"Translated audio saved to {translated_audio_file}")
@@ -74,3 +76,13 @@ async def translate_audio(file: UploadFile = File(...)):
         return {"error": "Google Web Speech API could not understand the audio"}
     except sr.RequestError as e:
         return {"error": f"Could not request results from Google Web Speech API; {e}"}
+    
+@app.post("/upload")
+async def upload_file(file: UploadFile = File(...)):
+    upload_folder = "uploaded_files"
+    if not os.path.exists(upload_folder):
+        os.makedirs(upload_folder)
+    with open(os.path.join(upload_folder, file.filename), "wb") as buffer:
+        buffer.write(await file.read())
+    transcription = await translate_audio(file.filename)
+    return {"filename": file.filename, "transcription": transcription}
